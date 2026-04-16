@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Case Study Files</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #403a78;
+      --blue-btn: #5f97c4;
+      --blue-btn-dark: #4e86b2;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #f8f9fd 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: #111827;
+    }
+
+    .container {
+      width: min(1380px, calc(100% - 32px));
+      margin: 34px auto 42px;
+    }
+
+    .toolbar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .search-bar {
+      width: min(760px, 100%);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      background: var(--surface);
+      border: 1px solid #d7dbe7;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .search-bar input {
+      border: none;
+      padding: 18px 18px;
+      font-size: 16px;
+      outline: none;
+      background: transparent;
+    }
+
+    .search-btn {
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      padding: 0 24px;
+      font-size: 22px;
+      cursor: default;
+    }
+
+    .filters {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid #d7dbe7;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      border: none;
+      background: #fff;
+      color: #374151;
+      padding: 14px 26px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .table-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+
+    .table-head h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .table-head span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1100px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 18px 20px;
+      font-size: 15px;
+      background: #f8f9fc;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fcfdff;
+    }
+
+    tbody tr:hover {
+      background: #f7faff;
+    }
+
+    tbody tr.pinned {
+      background: #e0f2fe !important;
+    }
+
+    tbody tr.pinned:hover {
+      background: #bae6fd !important;
+    }
+
+    tbody tr.group-separator td {
+      padding: 10px 20px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #075985;
+      background: #f0f9ff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .name-cell {
+      font-weight: 700;
+      min-width: 240px;
+    }
+
+    .id-cell {
+      min-width: 120px;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .topic-cell {
+      min-width: 360px;
+      color: #374151;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      transition: 0.2s ease;
+      color: #fff;
+      background: var(--blue-btn);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--blue-btn-dark);
+    }
+
+    .btn.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+      filter: grayscale(0.15);
+    }
+
+    .btn.missing {
+      background: #9ca3af;
+      opacity: 0.55;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    .btn.missing:hover {
+      background: #9ca3af;
+    }
+
+    .empty-state {
+      padding: 34px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .hidden-column {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: min(100%, calc(100% - 20px));
+      }
+
+      .filter-btn {
+        padding: 12px 18px;
+      }
+
+      .table-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="page-header">
+      <h1>Course Case Study Files</h1>
+    </header>
+
+    <section class="toolbar-wrap">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search by student or topic..." />
+        <button class="search-btn" aria-label="Search">⌕</button>
+      </div>
+
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="report">Report</button>
+        <button class="filter-btn" data-filter="presentation">Presentation</button>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-head">
+        <h2>Students</h2>
+        <span id="resultCount">0 entries</span>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>ID No.</th>
+              <th>Case Study Topic</th>
+              <th id="reportHeader">Report</th>
+              <th id="presentationHeader">Presentation</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">No matching results found.</div>
+    </section>
+  </main>
+
+  <script>
+    // =============================
+    // ADMIN SECTION: EDIT ONLY HERE
+    // =============================
+    const pinnedStudentIds = new Set([
+      // Highlighted students (pinned to top). Use student IDs so it works for everyone on GitHub.
+      "23227321", // Esraa Ashraf Ahmed
+      "23225410", // Tarek Ahmed Dawood
+      "23227456", // Sayed Abdallah
+      "23225600", // Akram Ahmed
+      "23227729", // Mona Abdel Fattah Ali
+      "23227118", // Abdulrahman Yousry Abdulrazik Abdulrehiem
+      "23225155", // Ali agha
+      "23227320", // Mohamed Tarek
+      "23225503", // Mohamed Mahmoud
+      "23225423"  // Omar Faheem Elkheshin
+    ]);
+
+    const students = [
+      { name: "Nourhan Magdy", id: "23226110", topic: "Customer Sentiment Analysis" },
+      { name: "Esraa Ashraf Ahmed", id: "23227321", topic: "Designing an AI-Enabled PMO Hub in Fintech" },
+      { name: "Tarek Ahmed Dawood", id: "23225410", topic: "Fuel Efficiency Optimization with AI" },
+      { name: "Khaled abd -Elreheem khalefa", id: "23227103", topic: "AI Assistants for IT Helpdesk Automation" },
+      { name: "Sayed Abdallah", id: "23227456", topic: "Fraud Detection Using Machine Learning in Digital Banking" },
+      { name: "Mahmoud Abdalmaguid Abdullah Mohamed", id: "23225653", topic: "Smart Factory Automation" },
+      { name: "Mohamed Yasser Mohamed Hamdy", id: "23227223", topic: "Personalized Product Recommendations" },
+      { name: "Mohamed Mostafa El-Hawiet", id: "23227076", topic: "AI Customer Segmentation" },
+      { name: "Akram Ahmed", id: "23225600", topic: "AI Demand Forecasting in Retail" },
+      { name: "Mohamed nabil sayed fouad", id: "23227310", topic: "Voice Analytics in Call Centers" },
+      { name: "Mona Abdel Fattah Ali", id: "23227729", topic: "Customer churn in digital banking" },
+      { name: "Banan dahy", id: "23227159", topic: "Medical Imaging Analysis with AI" },
+      { name: "Mahmoud Ahmed Farahat", id: "23227543", topic: "AI-Assisted Medical Diagnosis" },
+      { name: "Yasser Mohamed Galal", id: "23227184", topic: "AI-Enhanced Equipment Management System for Broadcasting Infrastructure" },
+      { name: "Abdulrahman Yousry Abdulrazik Abdulrehiem", id: "23227118", topic: "Delivery Delay Prediction" },
+      { name: "Ahmed Samir Elsayed Mohamed", id: "23225151", topic: "Predictive Maintenance in Manufacturing" },
+      { name: "Alaa Mahdaly", id: "23227316", topic: "Predictive Lead Scoring" },
+      { name: "Mona Mohamed Mohamed El Sayed", id: "23225832", topic: "Banking Customer Service Chatbots" },
+      { name: "Ali agha", id: "23225155", topic: "Predictive Lead Scoring" },
+      { name: "Maissara Selim", id: "23226004", topic: "AI-Driven Operations Room" },
+      { name: "Hassan Farid Fouad Mohammed", id: "23227731", topic: "Smart Factory Automation" },
+      { name: "Mohamed Tarek", id: "23227320", topic: "AI in EV Fleet Operation Optimization" },
+      { name: "Mohamed Mahmoud", id: "23225503", topic: "Supply Chain Distribution Prediction" },
+      { name: "Mostafa Abdellatif", id: "23227500", topic: "AI in Construction Cost estimation" },
+      { name: "Omar Faheem Elkheshin", id: "23225423", topic: "AI Inventory Management" },
+      { name: "Abdelrahman Metwaly", id: "23227156", topic: "Computer Vision for Quality Control" },
+      { name: "Youmna Mohamed", id: "23226602", topic: "AI Marketing Campaign Optimization" },
+      { name: "Omnia Mounir", id: "23226236", topic: "AI-Based Anti-Money Laundering (AML) Systems in Digital Banking" }
+    ];
+
+    function slugifyTopic(topic) {
+      return topic
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function filenameBaseFromTopic(topic) {
+      // Keep filenames human-readable, but remove characters that break on Windows/GitHub.
+      // Note: links URL-encode this base, so spaces and punctuation are fine.
+      const cleaned = topic
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/[. ]+$/g, '');
+
+      return cleaned || 'Untitled';
+    }
+
+    function buildUrl(folder, base, ext) {
+      return `${folder}/${encodeURIComponent(base)}.${ext}`;
+    }
+
+    function buildFiles(topic) {
+      const base = filenameBaseFromTopic(topic);
+      return {
+        reportCandidates: [
+          buildUrl('reports', base, 'pdf'),
+          buildUrl('reports', base, 'docx'),
+          buildUrl('reports', base, 'doc')
+        ],
+        presentationCandidates: [
+          // Prefer PDF so it opens easily in-browser; fallback to PPTX if PDF isn't present.
+          buildUrl('presentations', base, 'pdf'),
+          buildUrl('presentations', base, 'pptx')
+        ]
+      };
+    }
+
+    const normalizedStudents = students.map((student, index) => ({
+      ...student,
+      index,
+      pinned: pinnedStudentIds.has(student.id),
+      files: buildFiles(student.topic)
+    }));
+
+    const tableBody = document.getElementById('tableBody');
+    const searchInput = document.getElementById('searchInput');
+    const resultCount = document.getElementById('resultCount');
+    const emptyState = document.getElementById('emptyState');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const reportHeader = document.getElementById('reportHeader');
+    const presentationHeader = document.getElementById('presentationHeader');
+
+    let activeFilter = 'all';
+
+    const fileExistenceCache = new Map(); // url -> boolean | null (null = unknown)
+
+    async function checkUrlExists(url) {
+      if (fileExistenceCache.has(url)) return fileExistenceCache.get(url);
+
+      // When opened locally (file://), probing with fetch is usually blocked. Treat as unknown.
+      if (window.location.protocol === 'file:') {
+        fileExistenceCache.set(url, null);
+        return null;
+      }
+
+      try {
+        const head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        const ok = head.ok;
+        fileExistenceCache.set(url, ok);
+        return ok;
+      } catch (_) {
+        // Some servers might not allow HEAD; try a tiny ranged GET.
+        try {
+          const get = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { Range: 'bytes=0-0' }
+          });
+          const ok = get.ok || get.status === 206;
+          fileExistenceCache.set(url, ok);
+          return ok;
+        } catch (_) {
+          fileExistenceCache.set(url, null);
+          return null;
+        }
+      }
+    }
+
+    async function resolveFirstAvailableUrl(urls) {
+      let sawUnknown = false;
+      for (const url of urls) {
+        const exists = await checkUrlExists(url);
+        if (exists === true) return { url, verified: true };
+        if (exists === null) sawUnknown = true;
+      }
+      return { url: urls[0], verified: false, missing: !sawUnknown, unknown: sawUnknown };
+    }
+
+    async function resolveDownloadLinks() {
+      const links = Array.from(document.querySelectorAll('a[data-candidates]:not([data-resolved])'));
+      if (links.length === 0) return;
+
+      const maxConcurrency = 6;
+      let cursor = 0;
+
+      async function worker() {
+        while (cursor < links.length) {
+          const link = links[cursor++];
+          const candidates = (link.getAttribute('data-candidates') || '')
+            .split('|')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+          if (candidates.length === 0) {
+            link.classList.remove('disabled');
+            link.classList.add('missing');
+            link.textContent = 'Missing';
+            link.setAttribute('data-resolved', 'true');
+            continue;
+          }
+
+          const { url, missing, unknown } = await resolveFirstAvailableUrl(candidates);
+          link.href = url;
+          link.setAttribute('data-resolved', 'true');
+
+          if (missing) {
+            link.classList.add('missing');
+            link.classList.add('disabled');
+            link.textContent = 'Not available';
+            link.removeAttribute('download');
+            link.setAttribute('aria-disabled', 'true');
+            link.removeAttribute('href');
+          } else if (unknown) {
+            // Could not verify existence (e.g., opened via file://). Keep it usable rather than dimming everything.
+            link.classList.remove('disabled');
+            link.removeAttribute('aria-disabled');
+            link.title = 'File availability could not be verified in this environment.';
+          } else {
+            link.classList.remove('disabled');
+            link.removeAttribute('aria-disabled');
+            link.removeAttribute('title');
+          }
+        }
+      }
+
+      await Promise.all(Array.from({ length: Math.min(maxConcurrency, links.length) }, () => worker()));
+    }
+
+    function updateColumnVisibility() {
+      const showReport = activeFilter === 'all' || activeFilter === 'report';
+      const showPresentation = activeFilter === 'all' || activeFilter === 'presentation';
+
+      reportHeader.classList.toggle('hidden-column', !showReport);
+      presentationHeader.classList.toggle('hidden-column', !showPresentation);
+
+      document.querySelectorAll('[data-column="report"]').forEach(cell => {
+        cell.classList.toggle('hidden-column', !showReport);
+      });
+
+      document.querySelectorAll('[data-column="presentation"]').forEach(cell => {
+        cell.classList.toggle('hidden-column', !showPresentation);
+      });
+    }
+
+    function renderTable() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+
+      const filteredStudents = normalizedStudents.filter(student => {
+        return (
+          student.name.toLowerCase().includes(searchTerm) ||
+          student.id.toLowerCase().includes(searchTerm) ||
+          student.topic.toLowerCase().includes(searchTerm)
+        );
+      });
+
+      const pinnedStudents = filteredStudents
+        .filter(student => student.pinned)
+        .sort((a, b) => a.index - b.index);
+
+      const otherStudents = filteredStudents
+        .filter(student => !student.pinned)
+        .sort((a, b) => a.index - b.index);
+
+      const orderedStudents = [...pinnedStudents, ...otherStudents];
+
+      resultCount.textContent = `${orderedStudents.length} entr${orderedStudents.length === 1 ? 'y' : 'ies'}`;
+
+      if (orderedStudents.length === 0) {
+        tableBody.innerHTML = '';
+        emptyState.style.display = 'block';
+        updateColumnVisibility();
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      const rows = [];
+
+      if (pinnedStudents.length > 0) {
+        rows.push(`<tr class="group-separator"><td colspan="5">Selected topics</td></tr>`);
+      }
+
+      pinnedStudents.forEach(student => {
+        rows.push(`
+          <tr class="pinned">
+            <td class="name-cell">${student.name}</td>
+            <td class="id-cell">${student.id}</td>
+            <td class="topic-cell">${student.topic}</td>
+            <td data-column="report">
+              <a class="btn disabled" href="${student.files.reportCandidates[0]}" data-candidates="${student.files.reportCandidates.join('|')}" download target="_blank" rel="noopener noreferrer">Download</a>
+            </td>
+            <td data-column="presentation">
+              <a class="btn disabled" href="${student.files.presentationCandidates[0]}" data-candidates="${student.files.presentationCandidates.join('|')}" download target="_blank" rel="noopener noreferrer">Download</a>
+            </td>
+          </tr>
+        `);
+      });
+
+      if (otherStudents.length > 0) {
+        rows.push(`<tr class="group-separator"><td colspan="5">Other topics</td></tr>`);
+      }
+
+      otherStudents.forEach(student => {
+        rows.push(`
+          <tr>
+            <td class="name-cell">${student.name}</td>
+            <td class="id-cell">${student.id}</td>
+            <td class="topic-cell">${student.topic}</td>
+            <td data-column="report">
+              <a class="btn disabled" href="${student.files.reportCandidates[0]}" data-candidates="${student.files.reportCandidates.join('|')}" download target="_blank" rel="noopener noreferrer">Download</a>
+            </td>
+            <td data-column="presentation">
+              <a class="btn disabled" href="${student.files.presentationCandidates[0]}" data-candidates="${student.files.presentationCandidates.join('|')}" download target="_blank" rel="noopener noreferrer">Download</a>
+            </td>
+          </tr>
+        `);
+      });
+
+      tableBody.innerHTML = rows.join('');
+
+      updateColumnVisibility();
+      resolveDownloadLinks();
+    }
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        activeFilter = button.dataset.filter;
+        renderTable();
+      });
+    });
+
+    searchInput.addEventListener('input', renderTable);
+
+    function runTests() {
+      console.assert(slugifyTopic('AI Demand Forecasting in Retail') === 'ai-demand-forecasting-in-retail', 'Slugify basic topic failed');
+      console.assert(slugifyTopic('Designing an AI-Enabled PMO Hub in Fintech') === 'designing-an-ai-enabled-pmo-hub-in-fintech', 'Slugify hyphenated topic failed');
+      console.assert(slugifyTopic('Research & Analysis') === 'research-and-analysis', 'Slugify ampersand failed');
+
+      const sampleFiles = buildFiles('Customer Sentiment Analysis');
+      console.assert(sampleFiles.reportCandidates[0] === 'reports/Customer%20Sentiment%20Analysis.pdf', 'Report path generation failed');
+      console.assert(sampleFiles.presentationCandidates[0] === 'presentations/Customer%20Sentiment%20Analysis.pdf', 'Presentation path generation failed');
+
+      console.assert(normalizedStudents.length === students.length, 'Student normalization count mismatch');
+      console.assert(
+        normalizedStudents.every(student =>
+          student.files &&
+          Array.isArray(student.files.reportCandidates) &&
+          student.files.reportCandidates.length > 0 &&
+          Array.isArray(student.files.presentationCandidates) &&
+          student.files.presentationCandidates.length > 0
+        ),
+        'Missing generated files candidates'
+      );
+      console.assert(normalizedStudents.every(student => typeof student.pinned === 'boolean'), 'Pinned flag missing');
+    }
+
+    runTests();
+    renderTable();
+  </script>
+</body>
+</html>
