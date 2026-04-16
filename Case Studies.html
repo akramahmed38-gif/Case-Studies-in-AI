@@ -109,6 +109,37 @@
       color: #fff;
     }
 
+    .bulk-downloads {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 6px 0 22px;
+    }
+
+    .bulk-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      transition: 0.2s ease;
+      color: #fff;
+      background: var(--blue-btn);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .bulk-btn:hover {
+      background: var(--blue-btn-dark);
+    }
+
     .table-card {
       background: var(--surface);
       border: 1px solid var(--line);
@@ -289,6 +320,13 @@
       </div>
     </section>
 
+    <section class="bulk-downloads" aria-label="Bulk downloads">
+      <button class="bulk-btn" type="button" id="downloadEverythingBtn">Download Everything</button>
+      <a class="bulk-btn" href="downloads/all-reports.zip" download>Download Reports Only</a>
+      <button class="bulk-btn" type="button" id="downloadPresentationsBtn">Download Presentations Only</button>
+      <a class="bulk-btn" href="downloads/selected-topics-content.zip" download>Download Selected Topics Only</a>
+    </section>
+
     <section class="table-card">
       <div class="table-head">
         <h2>Students</h2>
@@ -418,8 +456,37 @@
     const filterButtons = document.querySelectorAll('.filter-btn');
     const reportHeader = document.getElementById('reportHeader');
     const presentationHeader = document.getElementById('presentationHeader');
+    const downloadEverythingBtn = document.getElementById('downloadEverythingBtn');
+    const downloadPresentationsBtn = document.getElementById('downloadPresentationsBtn');
 
     let activeFilter = 'all';
+
+    const bulkPresentationZips = [
+      'downloads/all-presentations-part1.zip',
+      'downloads/all-presentations-part2.zip'
+    ];
+
+    const bulkEverythingZips = [
+      'downloads/all-reports.zip',
+      ...bulkPresentationZips
+    ];
+
+    function triggerDownloads(urls) {
+      urls.forEach((url, index) => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        window.setTimeout(() => {
+          a.click();
+          a.remove();
+        }, index * 450);
+      });
+    }
+
+    downloadPresentationsBtn.addEventListener('click', () => triggerDownloads(bulkPresentationZips));
+    downloadEverythingBtn.addEventListener('click', () => triggerDownloads(bulkEverythingZips));
 
     const fileExistenceCache = new Map(); // url -> boolean | null (null = unknown)
 
