@@ -322,9 +322,9 @@
 
     <section class="bulk-downloads" aria-label="Bulk downloads">
       <button class="bulk-btn" type="button" id="downloadEverythingBtn">Download Everything</button>
-      <a class="bulk-btn" href="downloads/all-reports.zip" download>Download Reports Only</a>
+      <button class="bulk-btn" type="button" id="downloadReportsBtn">Download Reports Only</button>
       <button class="bulk-btn" type="button" id="downloadPresentationsBtn">Download Presentations Only</button>
-      <a class="bulk-btn" href="downloads/selected-topics-content.zip" download>Download Selected Topics Only</a>
+      <button class="bulk-btn" type="button" id="downloadSelectedTopicsBtn">Download Selected Topics Only</button>
     </section>
 
     <section class="table-card">
@@ -352,6 +352,7 @@
     </section>
   </main>
 
+  <script src="vendor/fflate.umd.js"></script>
   <script>
     // =============================
     // ADMIN SECTION: EDIT ONLY HERE
@@ -457,24 +458,45 @@
     const reportHeader = document.getElementById('reportHeader');
     const presentationHeader = document.getElementById('presentationHeader');
     const downloadEverythingBtn = document.getElementById('downloadEverythingBtn');
+    const downloadReportsBtn = document.getElementById('downloadReportsBtn');
     const downloadPresentationsBtn = document.getElementById('downloadPresentationsBtn');
+    const downloadSelectedTopicsBtn = document.getElementById('downloadSelectedTopicsBtn');
 
     let activeFilter = 'all';
 
-    const bulkPresentationZips = [
-      'downloads/all-presentations-part1.zip',
-      'downloads/all-presentations-part2.zip'
-    ];
+    function getBulkButtons() {
+      return [
+        downloadEverythingBtn,
+        downloadReportsBtn,
+        downloadPresentationsBtn,
+        downloadSelectedTopicsBtn
+      ].filter(Boolean);
+    }
 
-    const bulkEverythingZips = [
-      'downloads/all-reports.zip',
-      ...bulkPresentationZips
-    ];
+    function setBulkButtonsBusy(isBusy) {
+      getBulkButtons().forEach(btn => {
+        btn.disabled = isBusy;
+        btn.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+      });
+    }
 
-    function triggerDownloads(urls) {
-      urls.forEach((url, index) => {
+    function downloadBlob(bytes, filename) {
+      const blob = new Blob([bytes], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    }
+
+    function triggerIndividualDownloads(entries) {
+      entries.forEach((entry, index) => {
         const a = document.createElement('a');
-        a.href = url;
+        a.href = entry.url;
         a.download = '';
         a.style.display = 'none';
         document.body.appendChild(a);
@@ -485,8 +507,142 @@
       });
     }
 
-    downloadPresentationsBtn.addEventListener('click', () => triggerDownloads(bulkPresentationZips));
-    downloadEverythingBtn.addEventListener('click', () => triggerDownloads(bulkEverythingZips));
+    async function buildBulkEntries({ includeReports, includePresentations, onlyPinned }) {
+      const source = onlyPinned ? normalizedStudents.filter(s => s.pinned) : normalizedStudents;
+      const entries = [];
+
+      for (const student of source) {
+        if (includeReports) {
+          const r = await resolveFirstAvailableUrl(student.files.reportCandidates);
+          if (!r.missing) entries.push({ url: r.url, name: decodeURIComponent(r.url) });
+        }
+        if (includePresentations) {
+          const p = await resolveFirstAvailableUrl(student.files.presentationCandidates);
+          if (!p.missing) entries.push({ url: p.url, name: decodeURIComponent(p.url) });
+        }
+      }
+
+      const seen = new Set();
+      return entries.filter(entry => {
+        const key = `${entry.name}::${entry.url}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    async function downloadEntriesAsZipParts(entries, baseFilename, initiatingButton) {
+      const originalText = initiatingButton.textContent;
+
+      if (!Array.isArray(entries) || entries.length === 0) {
+        alert('No files found to download for this selection.');
+        return;
+      }
+
+      // When opened locally (file://), fetching file bytes to build a ZIP is usually blocked.
+      // Fall back to downloading individual files (browser may ask to allow multiple downloads).
+      if (window.location.protocol === 'file:') {
+        initiatingButton.textContent = 'Downloading files...';
+        setBulkButtonsBusy(true);
+        try {
+          triggerIndividualDownloads(entries);
+        } finally {
+          setBulkButtonsBusy(false);
+          initiatingButton.textContent = originalText;
+        }
+        return;
+      }
+
+      if (!window.fflate || typeof window.fflate.zipSync !== 'function') {
+        alert('ZIP library not loaded. Please refresh the page and try again.');
+        return;
+      }
+
+      const MAX_PART_BYTES = 90 * 1024 * 1024;
+
+      let partNumber = 1;
+      let partFiles = {};
+      let partBytes = 0;
+      let completed = 0;
+
+      function finalizeCurrentPart() {
+        if (Object.keys(partFiles).length === 0) return;
+        const suffix = partNumber > 1 ? `-part${partNumber}` : '';
+        const zipName = `${baseFilename}${suffix}.zip`;
+        const zipped = window.fflate.zipSync(partFiles, { level: 0 });
+        downloadBlob(zipped, zipName);
+        partNumber += 1;
+        partFiles = {};
+        partBytes = 0;
+      }
+
+      setBulkButtonsBusy(true);
+
+      try {
+        for (const entry of entries) {
+          initiatingButton.textContent = `Preparing ${completed + 1}/${entries.length}...`;
+
+          let response;
+          try {
+            response = await fetch(entry.url, { cache: 'no-store' });
+          } catch (_) {
+            completed += 1;
+            continue;
+          }
+
+          if (!response.ok) {
+            completed += 1;
+            continue;
+          }
+
+          const buffer = await response.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+
+          if (partBytes > 0 && partBytes + bytes.byteLength > MAX_PART_BYTES) {
+            finalizeCurrentPart();
+          }
+
+          let name = entry.name.replace(/^\.?\//, '');
+          if (Object.prototype.hasOwnProperty.call(partFiles, name)) {
+            const dot = name.lastIndexOf('.');
+            const base = dot >= 0 ? name.slice(0, dot) : name;
+            const ext = dot >= 0 ? name.slice(dot) : '';
+            let i = 2;
+            while (Object.prototype.hasOwnProperty.call(partFiles, `${base} (${i})${ext}`)) i += 1;
+            name = `${base} (${i})${ext}`;
+          }
+
+          partFiles[name] = bytes;
+          partBytes += bytes.byteLength;
+          completed += 1;
+        }
+
+        finalizeCurrentPart();
+      } finally {
+        setBulkButtonsBusy(false);
+        initiatingButton.textContent = originalText;
+      }
+    }
+
+    downloadReportsBtn.addEventListener('click', async () => {
+      const entries = await buildBulkEntries({ includeReports: true, includePresentations: false, onlyPinned: false });
+      await downloadEntriesAsZipParts(entries, 'all-reports', downloadReportsBtn);
+    });
+
+    downloadPresentationsBtn.addEventListener('click', async () => {
+      const entries = await buildBulkEntries({ includeReports: false, includePresentations: true, onlyPinned: false });
+      await downloadEntriesAsZipParts(entries, 'all-presentations', downloadPresentationsBtn);
+    });
+
+    downloadEverythingBtn.addEventListener('click', async () => {
+      const entries = await buildBulkEntries({ includeReports: true, includePresentations: true, onlyPinned: false });
+      await downloadEntriesAsZipParts(entries, 'all-content', downloadEverythingBtn);
+    });
+
+    downloadSelectedTopicsBtn.addEventListener('click', async () => {
+      const entries = await buildBulkEntries({ includeReports: true, includePresentations: true, onlyPinned: true });
+      await downloadEntriesAsZipParts(entries, 'selected-topics-content', downloadSelectedTopicsBtn);
+    });
 
     const fileExistenceCache = new Map(); // url -> boolean | null (null = unknown)
 
