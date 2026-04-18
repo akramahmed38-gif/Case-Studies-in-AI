@@ -507,6 +507,29 @@
       });
     }
 
+    function triggerUrlDownloads(urls) {
+      urls.forEach((url, index) => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        window.setTimeout(() => {
+          a.click();
+          a.remove();
+        }, index * 450);
+      });
+    }
+
+    async function allUrlsAvailable(urls) {
+      // Only meaningful when hosted over http(s); file:// probing is "unknown".
+      for (const url of urls) {
+        const exists = await checkUrlExists(url);
+        if (exists !== true) return false;
+      }
+      return true;
+    }
+
     async function buildBulkEntries({ includeReports, includePresentations, onlyPinned }) {
       const source = onlyPinned ? normalizedStudents.filter(s => s.pinned) : normalizedStudents;
       const entries = [];
@@ -539,9 +562,37 @@
         return;
       }
 
-      // When opened locally (file://), fetching file bytes to build a ZIP is usually blocked.
-      // Fall back to downloading individual files (browser may ask to allow multiple downloads).
-      if (window.location.protocol === 'file:') {
+      // Prefer prebuilt ZIPs (fast). If they don't exist, fall back to building a ZIP in-browser (slow).
+      // When opened locally (file://), fetching file bytes to build a ZIP is usually blocked, so we also
+      // fall back to downloading individual files.
+      if (window.location.protocol !== 'file:') {
+        const prebuiltByKey = {
+          'all-reports': ['downloads/all-reports.zip'],
+          'all-presentations': [
+            'downloads/all-presentations-part1.zip',
+            'downloads/all-presentations-part2.zip'
+          ],
+          'selected-topics-content': ['downloads/selected-topics-content.zip'],
+          'all-content': [
+            'downloads/all-reports.zip',
+            'downloads/all-presentations-part1.zip',
+            'downloads/all-presentations-part2.zip'
+          ]
+        };
+
+        const prebuilt = prebuiltByKey[baseFilename];
+        if (Array.isArray(prebuilt) && (await allUrlsAvailable(prebuilt))) {
+          initiatingButton.textContent = 'Starting download...';
+          setBulkButtonsBusy(true);
+          try {
+            triggerUrlDownloads(prebuilt);
+          } finally {
+            setBulkButtonsBusy(false);
+            initiatingButton.textContent = originalText;
+          }
+          return;
+        }
+      } else {
         initiatingButton.textContent = 'Downloading files...';
         setBulkButtonsBusy(true);
         try {
